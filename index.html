@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image to ASCII Art</title>
+    <style>
+        body {
+            font-family: monospace;
+        }
+
+        #ascii-art {
+            white-space: pre;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Image to ASCII Art</h1>
+    <div id="image-input">
+        <input type="file" id="upload" accept="image/*">
+    </div>
+    <div>
+        <label for="scale">放大比例:</label>
+        <input type="number" id="scale" value="10" min="1" max="100">
+    </div>
+    <button id="generate">生成ASCII艺术</button>
+    <div id="ascii-art"></div>
+</body>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const upload = document.getElementById('upload');
+        const scaleInput = document.getElementById('scale');
+        const generateButton = document.getElementById('generate');
+        const asciiArtDiv = document.getElementById('ascii-art');
+
+        generateButton.addEventListener('click', function () {
+            const scale = parseFloat(scaleInput.value) / 100;
+            const file = upload.files[0];
+            if (!file) {
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const img = new Image();
+                img.onload = function () {
+                    const asciiArt = convertImageToAscii(img, scale);
+                    asciiArtDiv.textContent = asciiArt;
+                }
+                img.src = e.target.result;
+            }
+            reader.readAsDataURL(file);
+        });
+    });
+
+    function convertImageToAscii(img, scale) {
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        const width = Math.floor(img.width * scale);
+        const height = Math.floor(img.height * scale * 0.55);  // Adjust height scale to fix aspect ratio
+        canvas.width = width;
+        canvas.height = height;
+
+        context.drawImage(img, 0, 0, width, height);
+        const imageData = context.getImageData(0, 0, width, height).data;
+
+        const chars = '@%#*+=-:. ';  // Character set for ASCII art
+        const asciiArt = [];
+        for (let y = 0; y < height; y++) {
+            let row = '';
+            for (let x = 0; x < width; x++) {
+                const offset = (y * width + x) * 4;
+                const r = imageData[offset];
+                const g = imageData[offset + 1];
+                const b = imageData[offset + 2];
+                const brightness = (0.2126 * r + 0.7152 * g + 0.0722 * b);
+                const charIndex = Math.floor((brightness / 255) * (chars.length - 1));
+                row += chars[charIndex];
+            }
+            asciiArt.push(row);
+        }
+
+        return asciiArt.join('\n');
+    }
+
+</script>
+
+</html>
